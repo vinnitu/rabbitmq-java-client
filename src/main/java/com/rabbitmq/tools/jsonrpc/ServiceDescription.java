@@ -27,7 +27,7 @@ import com.rabbitmq.tools.json.JSONUtil;
  * Description of a JSON-RPC service.
  */
 public class ServiceDescription {
-    public static final String JSON_RPC_VERSION = "1.1";
+    public static final String JSON_RPC_VERSION = "2.0";
 
     /** The service name */
     public String name;

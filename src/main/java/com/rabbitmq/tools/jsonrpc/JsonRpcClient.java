@@ -57,23 +57,33 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /** Holds the JSON-RPC service description for this client. */
     private ServiceDescription serviceDescription;
 
+    public static boolean full = true;
+
     /**
      * Construct a new JsonRpcClient, passing the parameters through
      * to RpcClient's constructor. The service description record is
      * retrieved from the server during construction.
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout)
+    public JsonRpcClient(Channel channel, String exchange, String routingKey, boolean check, int timeout)
         throws IOException, JsonRpcException, TimeoutException
     {
 	super(channel, exchange, routingKey, timeout);
-	retrieveServiceDescription();
+        if (check) {
+            retrieveServiceDescription();
+        }
+    }
+
+    public JsonRpcClient(Channel channel, String exchange, String routingKey, boolean check)
+    throws IOException, JsonRpcException, TimeoutException
+    {
+        this(channel, exchange, routingKey, check, RpcClient.NO_TIMEOUT);
     }
 
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
     throws IOException, JsonRpcException, TimeoutException
     {
-        this(channel, exchange, routingKey, RpcClient.NO_TIMEOUT);
+        this(channel, exchange, routingKey, true, RpcClient.NO_TIMEOUT);
     }
 
     /**
@@ -108,7 +118,9 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         HashMap<String, Object> request = new HashMap<String, Object>();
         request.put("id", null);
         request.put("method", method);
-        request.put("version", ServiceDescription.JSON_RPC_VERSION);
+        if (full) {
+            request.put("jsonrpc", ServiceDescription.JSON_RPC_VERSION);
+        }
         request.put("params", (params == null) ? new Object[0] : params);
         String requestStr = new JSONWriter().write(request);
         try {
@@ -122,6 +134,22 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     }
 
+    public void void_call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException
+    {
+        HashMap<String, Object> request = new HashMap<String, Object>();
+        request.put("method", method);
+        if (full) {
+            request.put("jsonrpc", ServiceDescription.JSON_RPC_VERSION);
+        }
+        request.put("params", (params == null) ? new Object[0] : params);
+        String requestStr = new JSONWriter().write(request);
+        try {
+            this.publish(null, requestStr.getBytes());
+        } catch(ShutdownSignalException ex) {
+            throw new IOException(ex.getMessage()); // wrap, re-throw
+        }
+    }
+
     /**
      * Public API - implements InvocationHandler.invoke. This is
      * useful for constructing dynamic proxies for JSON-RPC
@@ -131,7 +159,12 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable
     {
-        return call(method.getName(), args);
+        if (method.getReturnType().equals(Void.TYPE)) {
+             void_call(method.getName(), args);
+             return null;
+        } else {
+             return call(method.getName(), args);
+        }
     }
 
     /**

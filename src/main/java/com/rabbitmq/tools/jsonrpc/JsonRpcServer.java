@@ -48,6 +48,8 @@ public class JsonRpcServer extends StringRpcServer {
     /** The instance backing this server. */
     public Object interfaceInstance;
 
+    public static boolean full = true;
+
     /**
      * Construct a server that talks to the outside world using the
      * given channel, and constructs a fresh temporary
@@ -105,6 +107,15 @@ public class JsonRpcServer extends StringRpcServer {
     }
 
     /**
+     * Override our superclass' method, dispatching to doCall.
+     */
+    @Override
+    public void handleStringCast(String requestBody)
+    {
+        String replyBody = doCall(requestBody);
+    }
+
+    /**
      * Runs a single JSON-RPC request.
      * @param requestBody the JSON-RPC request string (a JSON encoded value)
      * @return a JSON-RPC response string (a JSON encoded value)
@@ -120,8 +131,10 @@ public class JsonRpcServer extends StringRpcServer {
             if (request == null) {
                 return errorResponse(null, 400, "Bad Request", null);
             }
-            if (!ServiceDescription.JSON_RPC_VERSION.equals(request.get("version"))) {
-                return errorResponse(null, 505, "JSONRPC version not supported", null);
+            if (full) {
+                if (!ServiceDescription.JSON_RPC_VERSION.equals(request.get("jsonrpc"))) {
+                    return errorResponse(null, 505, "JSONRPC version not supported", null);
+                }
             }
 
             id = request.get("id");
@@ -188,7 +201,9 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public static String response(Object id, String label, Object value) {
         Map<String, Object> resp = new HashMap<String, Object>();
-        resp.put("version", ServiceDescription.JSON_RPC_VERSION);
+        if (full) {
+            resp.put("jsonrpc", ServiceDescription.JSON_RPC_VERSION);
+        }
         if (id != null) {
             resp.put("id", id);
         }
