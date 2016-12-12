@@ -113,7 +113,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @throws JsonRpcException if the reply object contained an exception
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    public Object call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException
+    public Object call(String method, Object params) throws IOException, JsonRpcException, TimeoutException
     {
         HashMap<String, Object> request = new HashMap<String, Object>();
         request.put("id", null);
@@ -134,7 +134,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     }
 
-    public void void_call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException
+    public void void_call(String method, Object params) throws IOException, JsonRpcException, TimeoutException
     {
         HashMap<String, Object> request = new HashMap<String, Object>();
         request.put("method", method);

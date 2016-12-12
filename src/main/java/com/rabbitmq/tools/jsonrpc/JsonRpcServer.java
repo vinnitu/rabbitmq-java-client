@@ -139,8 +139,13 @@ public class JsonRpcServer extends StringRpcServer {
 
             id = request.get("id");
             method = (String) request.get("method");
-            List<?> parmList = (List<?>) request.get("params");
-            params = parmList.toArray();
+
+            if (request.get("params") instanceof Map) {
+                params = new Object[]{request.get("params")};
+            } else {
+                List<?> parmList = (List<?>) request.get("params");
+                params = parmList.toArray();
+            }
         } catch (ClassCastException cce) {
             // Bogus request!
             return errorResponse(null, 400, "Bad Request", null);
